@@ -28,7 +28,7 @@ def load_or_download_model(model_name):
         st.error(f"Failed to load the model: {e}")
         return None, None
 
-# LoRA Configuration
+# LoRA Configuration 
 def create_lora_config():
     return LoraConfig(
         r=8,  # Rank of the low-rank matrices
@@ -63,10 +63,10 @@ def prepare_dataset(dataset_path, tokenizer):
     # Tokenize the dataset
     def tokenize_function(examples):
         # Tokenize the input text and create labels for causal language modeling
-        tokenized_inputs = tokenizer(examples["text"], padding="max_length", truncation=True, max_length=512)
+        tokenized_inputs = tokenizer(examples["Question"], padding="max_length", truncation=True, max_length=512)
         tokenized_inputs["labels"] = tokenized_inputs["input_ids"]  # Use input_ids as labels for causal LM
         return tokenized_inputs
-    
+    st.write(dataset.column_names)
     tokenized_dataset = dataset.map(tokenize_function, batched=True)
     return tokenized_dataset
 
@@ -119,10 +119,10 @@ def chat_with_model(model, tokenizer):
 # Streamlit UI
 def main():
     st.sidebar.header("Configuration")
-    model_name = st.sidebar.text_input("Model Name (Hugging Face Repo ID)", "gpt2")
-    dataset_path = st.sidebar.text_input("Local Dataset Path (e.g., ./data/dataset.txt)", "./dataset/book1.txt")
+    model_name = st.sidebar.text_input("Model Name (Hugging Face Repo ID)", "openai-community/gpt2")
+    dataset_path = st.sidebar.text_input("Local Dataset Path (e.g., ./data/dataset.txt)", "./dataset/medical_o1_sft.json")
     output_dir = st.sidebar.text_input("Output Directory", "./fine_tuned_model")
-
+    st.session_state["fine_tuned_model"] = True
     if st.sidebar.button("Load Model and Dataset"):
         with st.spinner("Loading model and dataset..."):
             # Load or download the model
@@ -172,6 +172,7 @@ def main():
         if "fine_tuned_model" not in st.session_state:
             st.error("Please complete fine-tuning first.")
         else:
+            st.write("read this")
             # Load the fine-tuned model
             fine_tuned_model = AutoModelForCausalLM.from_pretrained(output_dir, device_map="auto")
             fine_tuned_tokenizer = AutoTokenizer.from_pretrained(output_dir)
