@@ -43,7 +43,7 @@ def main():
     # Initialize the model
     @st.cache_resource
     def load_model():
-        return SentimentAnalyzer("Fine_Tuned_Models")
+        return SentimentAnalyzer("Fine_Tuned_Models/sentimental-gpt")
 
     try:
         analyzer = load_model()
