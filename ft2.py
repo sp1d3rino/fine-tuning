@@ -8,6 +8,8 @@ import json
 import logging
 import torch
 from sklearn.preprocessing import LabelEncoder
+from huggingface_hub import HfFolder
+import argparse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +21,6 @@ def prepare_dataset(dataset):
     
     # Extract text and labels
     texts = dataset['text']
-    # Assuming 'sentiment' is your label column - adjust if different
     labels = label_encoder.fit_transform(dataset['label_text'])
     
     return texts, labels, label_encoder
@@ -33,7 +34,40 @@ def tokenize_function(examples, tokenizer, max_length=128):
         return_tensors="pt"
     )
 
+def upload_to_hub(trainer, tokenizer, label_map, repository_id, token):
+    """
+    Upload the model, tokenizer, and label mapping to HuggingFace Hub
+    """
+    try:
+        # Set the token
+        HfFolder.save_token(token)
+        
+        # Push to hub
+        logger.info(f"Uploading model to HuggingFace Hub: {repository_id}")
+        trainer.push_to_hub(
+            repository_id,
+            commit_message="Upload fine-tuned GPT2 model for sentiment analysis"
+        )
+        
+        # Upload label mapping
+        with open("label_map.json", "w") as f:
+            json.dump(label_map, f)
+            
+        logger.info("Model successfully uploaded to HuggingFace Hub!")
+        
+    except Exception as e:
+        logger.error(f"Error uploading to HuggingFace Hub: {str(e)}")
+        raise
+
 def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Train and upload a sentiment analysis model')
+    parser.add_argument('--hub_token', type=str, help='HuggingFace Hub token')
+    parser.add_argument('--repository_name', type=str, help='Repository name for HuggingFace Hub')
+    parser.add_argument('--push_to_hub', action='store_true', help='Whether to push the model to HuggingFace Hub')
+    
+    args = parser.parse_args()
+
     # Load dataset
     logger.info("Loading dataset...")
     dataset = load_dataset("mteb/tweet_sentiment_extraction")
@@ -121,6 +155,9 @@ def main():
         metric_for_best_model="accuracy",
         logging_dir="./logs",
         logging_steps=100,
+        push_to_hub=args.push_to_hub,
+        hub_token=args.hub_token if args.push_to_hub else None,
+        hub_model_id=args.repository_name if args.push_to_hub else None,
     )
     
     # Initialize trainer
@@ -141,7 +178,7 @@ def main():
     eval_results = trainer.evaluate()
     logger.info(f"Evaluation results: {eval_results}")
     
-    # Save everything
+    # Save everything locally
     output_dir = "Fine_Tuned_Models"
     os.makedirs(output_dir, exist_ok=True)
     
@@ -153,6 +190,16 @@ def main():
     label_map = {i: label for i, label in enumerate(label_encoder.classes_)}
     with open(os.path.join(output_dir, "label_map.json"), "w") as f:
         json.dump(label_map, f)
+    
+    # Upload to HuggingFace Hub if requested
+    if args.push_to_hub and args.hub_token and args.repository_name:
+        upload_to_hub(
+            trainer=trainer,
+            tokenizer=tokenizer,
+            label_map=label_map,
+            repository_id=args.repository_name,
+            token=args.hub_token
+        )
     
     logger.info("Training complete! Model and related files saved.")
 
