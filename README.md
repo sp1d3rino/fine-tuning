@@ -1,7 +1,7 @@
 # Fine tune base model for sentimental analysis
 
 
-This is a LLM trainer that generates a finetuned model starting from GTP2. After the training phase you can submit sentences to the model to classify the sentiment (positive, neutral, negative)
+This is a LLM trainer that generates a finetuned model starting from GTP2. After the training phase you can submit quotes to the model to check sentiment classification (positive, neutral, negative)
 
 
 
