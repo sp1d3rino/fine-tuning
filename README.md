@@ -23,6 +23,7 @@ python trainer.py
 ## Download the fine tuned Model
 
 cd Fine_Tuned_Models
+
 git clone https://huggingface.co/fabras/sentimental-gpt
 
 ## Run chat with fine tuned model
