@@ -5,7 +5,7 @@ This is a LLM trainer that generates a finetuned model starting from GTP2. After
 
 
 
-Installation phase. Install python modules
+## Installation phase. Install python modules
 
 
 
